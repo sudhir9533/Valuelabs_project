@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Vehicle Logbook Upload</title>
+</head>
+
+<body>
+    <h2>Select Vehicle</h2>
+
+    <button type="button" id="quickTesla">Quick: Tesla Model 3 Performance</button>
+    <button type="button" id="quickFord">Quick: Ford Ranger Raptor</button>
+
+    <form id="vehicleForm" enctype="multipart/form-data">
+        <br><br>
+
+        <label>Make:</label>
+        <select id="make" name="make" required>
+      <option value="">Select Make</option>
+      <option value="ford">Ford</option>
+      <option value="bmw">BMW</option>
+      <option value="tesla">Tesla</option>
+    </select>
+
+        <br><br>
+
+        <label>Model:</label>
+        <select id="model" name="model" required disabled>
+      <option value="">Select Model</option>
+    </select>
+
+        <br><br>
+
+        <label>Badge:</label>
+        <select id="badge" name="badge" required disabled>
+      <option value="">Select Badge</option>
+    </select>
+
+        <br><br>
+
+        <label>Upload Logbook (.txt only):</label>
+        <input type="file" name="logbook" accept=".txt" required />
+
+        <br><br>
+
+        <button type="submit">Submit</button>
+    </form>
+
+    <pre id="response"></pre>
+
+    <script>
+        const MODELS = {
+            ford: {
+                Ranger: ["Raptor", "RaptorX", "Wildtrak"],
+                Falcon: ["XR6", "XR6 Turbo", "XR8"],
+                "Falcon Ute": ["XR6", "XR6 Turbo"]
+            },
+            bmw: {
+                "130d": ["Drive 26d", "xDrive 30d"],
+                "240i": ["xDrive 30d", "xDrive 50d"],
+                "320e": ["Drive 75d", "xDrive 80d", "xDrive 85d"]
+            },
+            tesla: {
+                "Model 3": ["Performance", "Long Range", "Dual Motor"]
+            }
+        };
+
+        const makeSelect = document.getElementById("make");
+        const modelSelect = document.getElementById("model");
+        const badgeSelect = document.getElementById("badge");
+
+        function resetDropdown(select, placeholder, disabled = true) {
+            select.innerHTML = `<option value="">${placeholder}</option>`;
+            select.disabled = disabled;
+        }
+
+        function populateModels(make) {
+            resetDropdown(modelSelect, "Select Model", false);
+            resetDropdown(badgeSelect, "Select Badge", true);
+
+            Object.keys(MODELS[make]).forEach(model => {
+                const option = document.createElement("option");
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+        }
+
+        function populateBadges(make, model) {
+            resetDropdown(badgeSelect, "Select Badge", false);
+
+            MODELS[make][model].forEach(badge => {
+                const option = document.createElement("option");
+                option.value = badge;
+                option.textContent = badge;
+                badgeSelect.appendChild(option);
+            });
+        }
+
+        makeSelect.addEventListener("change", () => {
+            const make = makeSelect.value;
+
+            if (!make) {
+                resetDropdown(modelSelect, "Select Model");
+                resetDropdown(badgeSelect, "Select Badge");
+                return;
+            }
+
+            populateModels(make);
+        });
+
+        modelSelect.addEventListener("change", () => {
+            const make = makeSelect.value;
+            const model = modelSelect.value;
+
+            if (!model) {
+                resetDropdown(badgeSelect, "Select Badge");
+                return;
+            }
+
+            populateBadges(make, model);
+        });
+
+        document.getElementById("quickTesla").addEventListener("click", () => {
+            makeSelect.value = "tesla";
+            populateModels("tesla");
+            modelSelect.value = "Model 3";
+            populateBadges("tesla", "Model 3");
+            badgeSelect.value = "Performance";
+        });
+
+        document.getElementById("quickFord").addEventListener("click", () => {
+            makeSelect.value = "ford";
+            populateModels("ford");
+            modelSelect.value = "Ranger";
+            populateBadges("ford", "Ranger");
+            badgeSelect.value = "Raptor";
+        });
+
+        document.getElementById("vehicleForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+
+            const response = await fetch("/submit", {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.json();
+
+            document.getElementById("response").textContent =
+                JSON.stringify(result, null, 2);
+        });
+
+    </script>
+
+</body>
+
+</html>
